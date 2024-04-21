@@ -1,0 +1,19 @@
+Environmental Monitoring Rover: Transform the RC car into an environmental monitoring rover using the Raspberry Pi and Arduino. Equip it with sensors to measure air quality, temperature, humidity, and other relevant environmental parameters. Use TensorFlow Lite models for data analysis to detect and identify hazardous substances or anomalies. This project can provide valuable information for disaster response teams.
+
+would it be possible to, for example, detect places where wild fires must ABSOLUTELY be stopped, hence telling the firefighting team where to focus on instead of randomly focusing on the entire area, for example they could focus on less humid areas or highly flammable areas or places with natural gases that may lead to explosions?
+
+Theme: D.A.R.E. Disaster Assistance and Response Engineering
+
+Build a robot capable of navigating and performing tasks in disaster-stricken areas, such as earthquake
+sites or areas affected by wildfires.
+
+Focus on features like obstacle avoidance, search and rescue operations, environment perception, and
+communication in challenging conditions.
+
+Team Size: up to 4 members per team + 1 advisor (faculty member, senior, or graduate student)
+
+Project Expense Cap: 500 USD per team
+
+Date: April 20th, 2024
+
+Location: LAU Byblos campus
