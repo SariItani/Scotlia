@@ -5,3 +5,7 @@ def process_image(path, flag=False):
     else:
         # receive the image from the arduino once the flag is enabled 
         return # the image
+
+
+def map(path):
+    pass
