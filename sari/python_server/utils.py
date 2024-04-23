@@ -1,4 +1,4 @@
-def process_image(path, flag):
+def process_image(path, flag=False):
     if not flag:
         print("image:", path)
         return path
