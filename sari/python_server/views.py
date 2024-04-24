@@ -8,7 +8,7 @@ from utils import detect_stuff
 def hello_world():
     image = utils.process_image('forset.jpeg')
     images = detect_stuff()
-    random_image = image[0][1]
+    random_image = images[0][1]
 
     ser = serial.Serial('/dev/ttyACM0',9600, timeout=1)
     ser.reset_input_buffer()
