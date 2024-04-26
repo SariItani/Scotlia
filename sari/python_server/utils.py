@@ -1,17 +1,13 @@
-def process_image(path, flag=False):
-    if not flag:
-        print("image:", path)
-        return path
-    else:
-        # receive the image from the arduino once the flag is enabled 
-        return # the image
+import cv2
+import numpy as np
+
 
 def draw_grid(image, cell_size):
     height, width, _ = image.shape
     for y in range(0, height, cell_size):
-        cv2.line(image, (0, y), (width, y), (0, 0, 0), 1)  # Draw horizontal grid lines
+        cv2.line(image, (0, y), (width, y), (0, 0, 0), 1)
     for x in range(0, width, cell_size):
-        cv2.line(image, (x, 0), (x, height), (0, 0, 0), 1)  # Draw vertical grid lines
+        cv2.line(image, (x, 0), (x, height), (0, 0, 0), 1)
     return image
 
 def map(path, cell_size=25):
@@ -22,9 +18,6 @@ def map(path, cell_size=25):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-
-import cv2
-import numpy as np
 
 def detect_fire(image):
     lower_fire = np.array([0, 50, 75])
@@ -94,6 +87,7 @@ def detect_smoke(image):
         cv2.rectangle(image, (x, y), (x + w, y + h), (128, 128, 128), 2)
 
     return image, smoke_boxes
+
 
 def detect_stuff():
     images=[]
