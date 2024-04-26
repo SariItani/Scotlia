@@ -6,19 +6,22 @@ def process_image(path, flag=False):
         # receive the image from the arduino once the flag is enabled 
         return # the image
 
+def draw_grid(image, cell_size):
+    height, width, _ = image.shape
+    for y in range(0, height, cell_size):
+        cv2.line(image, (0, y), (width, y), (0, 0, 0), 1)  # Draw horizontal grid lines
+    for x in range(0, width, cell_size):
+        cv2.line(image, (x, 0), (x, height), (0, 0, 0), 1)  # Draw vertical grid lines
+    return image
 
-def map(path):
-    # open CV will detect fire
-    # we will also detect green biomass
-    # we will also detect human property like houses
-    # then we will create our heatmap as so:
-    # the bounding boxes of the houses have high priority if there is a fire coming towards it.
-    # if there is fire inside then the box then the entire area is highest priority
-    # biomass near fire are at risk of spreading more fire so the bounding box facing the fire is high priority
-    # if there is fire inside the biomass box then the fire box is highest priority and it decreases radially but with a multiplier since it is inside a biomass region
-    # in the normal case, if there is fire, then we trace a radial line from the center of its bounding box and outwards in the map. Depending on the distance, priority is calculated, and depending on the boudning boxes of biomass and human settlements, the heatmap is calculated as well.
-    # heatmap is plotted, 1->RED, and 0->Blue
-    pass
+def map(path, cell_size=25):
+    image = cv2.imread(path)
+    grid_image = draw_grid(image.copy(), cell_size)
+    grid_image = cv2.resize(grid_image, (1067, 600))
+    cv2.imshow("Grid Image", grid_image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
 
 import cv2
 import numpy as np
@@ -141,3 +144,4 @@ if __name__ == "__main__":
         # now i want to save the images in the directory so i can call them in another function
         cv2.waitKey(0)
         cv2.destroyAllWindows()
+    map("./python_server/static/fire3.jpg")
