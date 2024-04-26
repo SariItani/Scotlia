@@ -1,3 +1,4 @@
+import math
 import cv2
 import numpy as np
 
@@ -44,20 +45,22 @@ def color_grid(image, colors, cell_size, fire_sizes, fire_centers, tree_sizes, t
             for i in tree_centers.keys():
                 print(f"At Cell(X, Y): ({center_x, center_y}) the distance from {i}th Tree at {tree_centers[i]} is {tree_distances[i]}.")
             # Determine the color for the current grid cell
-            color_value = 0.6 * np.sum(np.array(list(fire_sizes.values())) / np.array(list(fire_distances.values()))) + 0.4 * np.sum(np.array(list(tree_sizes.values())) / np.array(list(tree_distances.values())))
+            color_value = 0.55 * np.sum(np.array(list(fire_sizes.values()))*0.2 / 1.5*np.array(list(fire_distances.values()))) + 0.45 * np.sum(2.2*np.array(list(tree_sizes.values())) / 0.8*np.array(list(tree_distances.values())))
             color_values[y, x] = color_value
 
     max_color_value = max(color_values.values())
     min_color_value = min(color_values.values())
     for key in color_values:
         color_values[key] /= (max_color_value - min_color_value)
+        # color_values[key] *= 100
+        print(color_values[key])
 
     for y in range(0, height, cell_size):
         for x in range(0, width, cell_size):        
-            blue_value = int((1 - color_values[y, x]) * 255)  # Blue value (closer to 0)
+            blue_value = int(abs(1 - color_values[y, x]) * 255)  # Blue value (closer to 0)
             red_value = int(color_values[y, x] * 255)  # Red value (closer to 1)
             color = (blue_value, 0, red_value)  # Blue to Red color gradient
-            print("Color:", color)
+            # print("Color:", color)
             cv2.rectangle(image, (x, y), (x + cell_size, y + cell_size), color, -1)
     return image
 
