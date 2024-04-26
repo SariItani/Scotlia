@@ -11,89 +11,62 @@ def draw_grid(image, cell_size):
     return image
 
 def generate_random_colors(grid_size):
-    return np.random.rand(grid_size[0], grid_size[1])
+    # Generate random numbers representing color values (0 to 1)
+    colors = np.random.rand(grid_size[0], grid_size[1])
+    return colors
 
-def calculate_color_priority(tree_sizes, tree_distances, fire_sizes, fire_distances, tree_factor, fire_factor):
-    if not tree_sizes or not fire_sizes:
-        return 0
-    
-    tree_priority = sum([size / distance for size, distance in zip(tree_sizes, tree_distances)]) * tree_factor
-    fire_priority = sum([size / distance for size, distance in zip(fire_sizes, fire_distances)]) * fire_factor
-    
-    total_factor = tree_factor + fire_factor
-    color_priority = (tree_priority + fire_priority) / total_factor
-    
-    return color_priority
+def calculate_color(grid_center, box_centers, box_sizes):
+    colors = []
+    for box_center, box_size in zip(box_centers.values(), box_sizes.values()):
+        distance = np.linalg.norm(np.array(box_center) - np.array(grid_center))
+        normalized_distance = distance / np.sqrt(box_size)
+        color_value = 1 - np.clip(normalized_distance, 0, 1)  # Ensure color value is within 0 to 1
+        colors.append(color_value)
+    return max(colors) if colors else 0
 
-def color_grid(image, colors, cell_size, tree_boxes, fire_boxes):
+
+def color_grid(image, colors, cell_size, fire_sizes, fire_centers, tree_sizes, tree_centers):
     height, width, _ = image.shape
+    grid_height, grid_width = colors.shape
+    color_values = {}
     for y in range(0, height, cell_size):
         for x in range(0, width, cell_size):
-            color_value = colors[(y-1) // cell_size, (x-1) // cell_size]
-            blue_value = int(color_value * 255)  # Use original color_value
-            red_value = int((1 - color_value) * 255)  # Use original color_value
-            color = (blue_value, 0, red_value)
-            print(f"RBG: ({red_value}, 0, {blue_value}) at Pixel: ({x + cell_size // 2},{y + cell_size // 2})")
+            center_x = int(x + grid_width/2)
+            center_y = int(y + grid_height/2)
+            fire_distances = {}
+            for i, (x_fire, y_fire) in fire_centers.items():
+                fire_distances[i] = np.sqrt((x_fire-center_x)**2 + (y_fire-center_y)**2)
+            tree_distances = {}
+            for i, (x_tree, y_tree) in tree_centers.items():
+                tree_distances[i] = np.sqrt((x_tree-center_x)**2 + (y_tree-center_y)**2)
+            for i in fire_centers.keys():
+                print(f"At Cell(X, Y): ({center_x, center_y}) the distance from {i}th Fire at {fire_centers[i]} is {fire_distances[i]}.")
+            for i in tree_centers.keys():
+                print(f"At Cell(X, Y): ({center_x, center_y}) the distance from {i}th Tree at {tree_centers[i]} is {tree_distances[i]}.")
+            # Determine the color for the current grid cell
+            color_value = 0.6 * np.sum(np.array(list(fire_sizes.values())) / np.array(list(fire_distances.values()))) + 0.4 * np.sum(np.array(list(tree_sizes.values())) / np.array(list(tree_distances.values())))
+            color_values[y, x] = color_value
 
-            tree_sizes, tree_distances = [], []
-            for tree_box in tree_boxes:
-                tree_center = (tree_box[0] + tree_box[2] // 2, tree_box[1] + tree_box[3] // 2)
-                tree_distance = np.sqrt((tree_center[0] - x - cell_size // 2) ** 2 +
-                                         (tree_center[1] - y - cell_size // 2) ** 2)
-                tree_sizes.append(tree_box[2] * tree_box[3])
-                tree_distances.append(tree_distance)
+    max_color_value = max(color_values.values())
+    min_color_value = min(color_values.values())
+    for key in color_values:
+        color_values[key] /= (max_color_value - min_color_value)
 
-            fire_sizes, fire_distances = [], []
-            for fire_box in fire_boxes:
-                fire_center = (fire_box[0] + fire_box[2] // 2, fire_box[1] + fire_box[3] // 2)
-                fire_distance = np.sqrt((fire_center[0] - x - cell_size // 2) ** 2 +
-                                         (fire_center[1] - y - cell_size // 2) ** 2)
-                fire_sizes.append(fire_box[2] * fire_box[3])
-                fire_distances.append(fire_distance)
-
-            color_priority = calculate_color_priority(tree_sizes, tree_distances, fire_sizes, fire_distances, 40, 60)
-            color_value = color_priority
-
-            blue_value = int((1 - color_value) * 255)
-            red_value = int(color_value * 255)
-            color = (blue_value, 0, red_value)
-
+    for y in range(0, height, cell_size):
+        for x in range(0, width, cell_size):        
+            blue_value = int((1 - color_values[y, x]) * 255)  # Blue value (closer to 0)
+            red_value = int(color_values[y, x] * 255)  # Red value (closer to 1)
+            color = (blue_value, 0, red_value)  # Blue to Red color gradient
+            print("Color:", color)
             cv2.rectangle(image, (x, y), (x + cell_size, y + cell_size), color, -1)
     return image
 
-def map_with_colors(path, cell_size=25):
+def map_with_colors(path, fire_sizes, fire_centers, tree_sizes, tree_centers, cell_size=25):
     image = cv2.imread(path)
     grid_image = draw_grid(image.copy(), cell_size)
-    grid_size = (image.shape[0] // cell_size, image.shape[1] // cell_size)
-    colors = np.zeros(grid_size)
-
-    _, fire_boxes = detect_fire(image)
-    _, tree_boxes = detect_trees(image)
-
-    for y in range(grid_size[0]):
-        for x in range(grid_size[1]):
-            grid_cell_center = (x * cell_size + cell_size // 2, y * cell_size + cell_size // 2)
-
-            tree_sizes, tree_distances = [], []
-            for tree_box in tree_boxes:
-                tree_center = (tree_box[0] + tree_box[2] // 2, tree_box[1] + tree_box[3] // 2)
-                tree_distance = np.sqrt((tree_center[0] - grid_cell_center[0]) ** 2 +
-                                         (tree_center[1] - grid_cell_center[1]) ** 2)
-                tree_sizes.append(tree_box[2] * tree_box[3])
-                tree_distances.append(tree_distance)
-
-            fire_sizes, fire_distances = [], []
-            for fire_box in fire_boxes:
-                fire_center = (fire_box[0] + fire_box[2] // 2, fire_box[1] + fire_box[3] // 2)
-                fire_distance = np.sqrt((fire_center[0] - grid_cell_center[0]) ** 2 +
-                                         (fire_center[1] - grid_cell_center[1]) ** 2)
-                fire_sizes.append(fire_box[2] * fire_box[3])
-                fire_distances.append(fire_distance)
-
-            color_priority = calculate_color_priority(tree_sizes, tree_distances, fire_sizes, fire_distances, 0.04, 0.1)
-            colors[y, x] = color_priority
-
-    colored_image = color_grid(grid_image, colors, cell_size, tree_boxes, fire_boxes)
+    grid_size = (grid_image.shape[0] // cell_size, grid_image.shape[1] // cell_size)
+    colors = generate_random_colors(grid_size)
+    colored_image = color_grid(grid_image, colors, cell_size, fire_sizes, fire_centers, tree_sizes, tree_centers)
     colored_image = cv2.resize(colored_image, (1067, 600))
     return colored_image
 
@@ -101,79 +74,133 @@ def map_with_colors(path, cell_size=25):
 def detect_fire(image):
     lower_fire = np.array([0, 50, 75])
     upper_fire = np.array([96, 255, 255])
+
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
     fire_mask = cv2.inRange(hsv, lower_fire, upper_fire)
+
     fire_mask = cv2.erode(fire_mask, None, iterations=2)
     fire_mask = cv2.dilate(fire_mask, None, iterations=4)
+
     contours, _ = cv2.findContours(fire_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
     min_area = 100
     fire_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > min_area]
-    fire_boxes = [cv2.boundingRect(cnt) for cnt in fire_contours]
-    for x, y, w, h in fire_boxes:
-        cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 255), 2)
-    return image, fire_boxes
 
+    sizes = {}
+    centers = {}
+    fire_boxes = [cv2.boundingRect(cnt) for cnt in fire_contours]
+    for i, (x, y, w, h) in enumerate(fire_boxes):
+        sizes[i] = w*h
+        centers[i] = (int(x+w/2), int(y+h/2))
+        cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 255), 2)
+
+    return image, fire_boxes, sizes, centers
 
 def detect_trees(image):
     lower_trees = np.array([0, 10, 0])
     upper_trees = np.array([96, 255, 126])
+
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
     tree_mask = cv2.inRange(hsv, lower_trees, upper_trees)
+
     tree_mask = cv2.erode(tree_mask, None, iterations=3)
     tree_mask = cv2.dilate(tree_mask, None, iterations=2)
+
     contours, _ = cv2.findContours(tree_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
     min_area = 100
     tree_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > min_area]
-    tree_boxes = [cv2.boundingRect(cnt) for cnt in tree_contours]
-    for x, y, w, h in tree_boxes:
-        cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
-    return image, tree_boxes
 
+    tree_boxes = [cv2.boundingRect(cnt) for cnt in tree_contours]
+    
+    sizes = {}
+    centers = {}
+    for i, (x, y, w, h) in enumerate(tree_boxes):
+        sizes[i] = w*h
+        centers[i] = (int(x+w/2), int(y+h/2))
+        cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+    return image, tree_boxes, sizes, centers
 
 def detect_smoke(image):
-    lower_smoke = np.array([75, 75, 75])
     upper_smoke = np.array([255, 255, 255])
+    lower_smoke= np.array([75, 75, 75])
+
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
     smoke_mask = cv2.inRange(hsv, lower_smoke, upper_smoke)
+
     smoke_mask = cv2.erode(smoke_mask, None, iterations=4)
     smoke_mask = cv2.dilate(smoke_mask, None, iterations=8)
+
     contours, _ = cv2.findContours(smoke_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
     min_area = 100
     smoke_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > min_area]
+
     smoke_boxes = [cv2.boundingRect(cnt) for cnt in smoke_contours]
     for x, y, w, h in smoke_boxes:
         cv2.rectangle(image, (x, y), (x + w, y + h), (128, 128, 128), 2)
+
     return image, smoke_boxes
 
 
-def detect_stuff():
-    images = [cv2.imread("./python_server/static/fire.jpg"),
-              cv2.imread("./python_server/static/fire2.jpg"),
-              cv2.imread("./python_server/static/fire3.jpg")]
+def detect_stuff(path):
+    images=[]
+    images.append(cv2.imread(path))
+    # images.append(cv2.imread("./python_server/static/fire2.jpg"))
+    # images.append(cv2.imread("./python_server/static/fire3.jpg"))
+    # images.append(cv2.imread("./python_server/static/fire4.jpg"))
+    
     hahaimages = []
     for i, image in enumerate(images):
-        screen_width, screen_height = 800, 600
+        screen_width = 800
+        screen_height = 600
         resized_image_fire = cv2.resize(image, (screen_width, screen_height))
+
         resized_image_tree = cv2.resize(image, (screen_width, screen_height))
         resized_image_smoke = cv2.resize(image, (screen_width, screen_height))
-        image_with_fire, fire_boxes = detect_fire(resized_image_fire)
-        image_with_trees, tree_boxes = detect_trees(resized_image_tree)
-        image_with_smoke, smoke_boxes = detect_smoke(resized_image_smoke)
+
+        image_with_fire, fire_boxes, fire_sizes, fire_centers = detect_fire(resized_image_fire)
+        image_with_trees, tree_boxes, tree_sizes, tree_centers = detect_trees(resized_image_tree)
+        image_with_smoke, somke_boxes = detect_smoke(resized_image_smoke)
+        
+        print("\nFire Sizes:", fire_sizes)
+        print("\nTree Sizes:", tree_sizes)
+        print("\nFire Centers:", fire_centers)
+        print("\nTree Centers:", tree_centers)
+
         hahaimages.append([image_with_fire, image_with_smoke, image_with_trees])
+
+        # cv2.imshow("Fire Detection", image_with_fire)
+        # cv2.imshow("Tree Detection", image_with_trees)
+        # cv2.imshow("Smoke Detection", image_with_smoke)
+        # # now i want to save the images in the directory so i can call them in another function
         cv2.imwrite(f"./python_server/static/firedet{i}.jpg", image_with_fire)
         cv2.imwrite(f"./python_server/static/smokedet{i}.jpg", image_with_smoke)
         cv2.imwrite(f"./python_server/static/treedet{i}.jpg", image_with_trees)
-        with open(f'./python_server/static/firedat{i}.txt', 'w') as file:
+        with open (f'./python_server/static/firedat{i}.txt', 'w') as file:
             file.write(str(fire_boxes))
-        with open(f'./python_server/static/treedat{i}.txt', 'w') as file:
+        with open (f'./python_server/static/treedat{i}.txt', 'w') as file:
             file.write(str(tree_boxes))
-        with open(f'./python_server/static/smokedat{i}.txt', 'w') as file:
-            file.write(str(smoke_boxes))
-    return hahaimages
+        with open (f'./python_server/static/smokedat{i}.txt', 'w') as file:
+            file.write(str(somke_boxes))
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+    return hahaimages, fire_sizes, fire_centers, tree_sizes, tree_centers
 
 
 if __name__ == "__main__":
-    images = detect_stuff()
-    for fire, smoke, tree in images:
-        pass  # Do something with the processed images if needed
-    map_with_colors("./python_server/static/fire.jpg", cell_size=100)
+    images, fire_sizes, fire_centers, tree_sizes, tree_centers = detect_stuff()
+    for image in images:
+        fire, smoke, tree = image[0], image[1], image[2]
+        # cv2.imshow("Fire Detection", fire)
+        # cv2.imshow("Tree Detection", tree)
+        # cv2.imshow("Smoke Detection", smoke)
+        # now i want to save the images in the directory so i can call them in another function
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+    map_with_colors("./python_server/static/fire.png", fire_sizes, fire_centers, tree_sizes, tree_centers, cell_size=10)
+
