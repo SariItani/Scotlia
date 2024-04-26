@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 @app.route('/')
 def hello_world():
     images = utils.detect_stuff()
-    fire = images[1][0]
+    fire = images[1][2]
     cv2.imwrite('python_server/static/image.png', fire) # replace this with map
 
     return render_template('index.html', image='image.png')

@@ -46,27 +46,29 @@ def detect_fire(image):
     return image, fire_boxes
 
 def detect_trees(image):
-    lower_trees = np.array([0, 15, 0])
-    upper_trees = np.array([64, 200, 64])
+  lower_trees = np.array([0, 15, 0])
+  upper_trees = np.array([128, 200, 64])
 
+  hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+  tree_mask = cv2.inRange(hsv, lower_trees, upper_trees)
 
-    tree_mask = cv2.inRange(hsv, lower_trees, upper_trees)
+  tree_mask = cv2.erode(tree_mask, None, iterations=2)
+  tree_mask = cv2.dilate(tree_mask, None, iterations=4)
 
-    tree_mask = cv2.erode(tree_mask, None, iterations=2)
-    tree_mask = cv2.dilate(tree_mask, None, iterations=4)
+  contours, _ = cv2.findContours(tree_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    contours, _ = cv2.findContours(tree_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+  min_area = 100
+  tree_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > min_area]
 
-    min_area = 100
-    tree_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > min_area]
+  # Filter contours based on maximum box size
+  max_box_size = 125
+  tree_boxes = [cv2.boundingRect(cnt) for cnt in tree_contours if cv2.boundingRect(cnt)[2] <= max_box_size and cv2.boundingRect(cnt)[3] <= max_box_size]
 
-    tree_boxes = [cv2.boundingRect(cnt) for cnt in tree_contours]
-    for x, y, w, h in tree_boxes:
-        cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+  for x, y, w, h in tree_boxes:
+    cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-    return image, tree_boxes
+  return image, tree_boxes
 
 def detect_trees(image):
     lower_trees = np.array([0, 15, 0])
@@ -90,6 +92,10 @@ def detect_trees(image):
         cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
     return image, tree_boxes
+
+
+
+
 
 def detect_smoke(image):
     upper_smoke = np.array([255, 255, 255])
@@ -122,7 +128,7 @@ def detect_stuff():
     images.append(cv2.imread("./python_server/static/fire4.jpg"))
     
     hahaimages = []
-    for image in images:
+    for i, image in enumerate(images):
         screen_width = 800
         screen_height = 600
         resized_image_fire = cv2.resize(image, (screen_width, screen_height))
@@ -139,6 +145,9 @@ def detect_stuff():
         # cv2.imshow("Tree Detection", image_with_trees)
         # cv2.imshow("Smoke Detection", image_with_smoke)
         # # now i want to save the images in the directory so i can call them in another function
+        # cv2.imwrite(f"./python_server/static/firedet{i}.jpg", image_with_fire)
+        # cv2.imwrite(f"./python_server/static/smokedet{i}.jpg", image_with_smoke)
+        # cv2.imwrite(f"./python_server/static/treedet{i}.jpg", image_with_trees)
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
     return hahaimages
