@@ -46,41 +46,16 @@ def detect_fire(image):
     return image, fire_boxes
 
 def detect_trees(image):
-  lower_trees = np.array([0, 15, 0])
-  upper_trees = np.array([128, 200, 64])
-
-  hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-
-  tree_mask = cv2.inRange(hsv, lower_trees, upper_trees)
-
-  tree_mask = cv2.erode(tree_mask, None, iterations=2)
-  tree_mask = cv2.dilate(tree_mask, None, iterations=4)
-
-  contours, _ = cv2.findContours(tree_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-  min_area = 100
-  tree_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > min_area]
-
-  # Filter contours based on maximum box size
-  max_box_size = 125
-  tree_boxes = [cv2.boundingRect(cnt) for cnt in tree_contours if cv2.boundingRect(cnt)[2] <= max_box_size and cv2.boundingRect(cnt)[3] <= max_box_size]
-
-  for x, y, w, h in tree_boxes:
-    cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
-
-  return image, tree_boxes
-
-def detect_trees(image):
-    lower_trees = np.array([0, 15, 0])
-    upper_trees = np.array([128, 200, 64])
+    lower_trees = np.array([0, 10, 0])
+    upper_trees = np.array([96, 255, 126])
 
 
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
     tree_mask = cv2.inRange(hsv, lower_trees, upper_trees)
 
-    tree_mask = cv2.erode(tree_mask, None, iterations=2)
-    tree_mask = cv2.dilate(tree_mask, None, iterations=4)
+    tree_mask = cv2.erode(tree_mask, None, iterations=3)
+    tree_mask = cv2.dilate(tree_mask, None, iterations=2)
 
     contours, _ = cv2.findContours(tree_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -92,9 +67,6 @@ def detect_trees(image):
         cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
     return image, tree_boxes
-
-
-
 
 
 def detect_smoke(image):
@@ -125,7 +97,7 @@ def detect_stuff():
     images.append(cv2.imread("./python_server/static/fire.jpg"))
     images.append(cv2.imread("./python_server/static/fire2.jpg"))
     images.append(cv2.imread("./python_server/static/fire3.jpg"))
-    images.append(cv2.imread("./python_server/static/fire4.jpg"))
+    # images.append(cv2.imread("./python_server/static/fire4.jpg"))
     
     hahaimages = []
     for i, image in enumerate(images):
