@@ -116,9 +116,10 @@ def detect_smoke(image):
 
 def detect_stuff():
     images=[]
-    images.append(cv2.imread("./static/fire.jpg"))
-    images.append(cv2.imread("./static/fire2.jpg"))
-    images.append(cv2.imread("./static/fire3.jpg"))
+    images.append(cv2.imread("./python_server/static/fire.jpg"))
+    images.append(cv2.imread("./python_server/static/fire2.jpg"))
+    images.append(cv2.imread("./python_server/static/fire3.jpg"))
+    images.append(cv2.imread("./python_server/static/fire4.jpg"))
     
     hahaimages = []
     for image in images:
