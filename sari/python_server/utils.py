@@ -117,9 +117,15 @@ def detect_stuff():
         # cv2.imshow("Tree Detection", image_with_trees)
         # cv2.imshow("Smoke Detection", image_with_smoke)
         # # now i want to save the images in the directory so i can call them in another function
-        # cv2.imwrite(f"./python_server/static/firedet{i}.jpg", image_with_fire)
-        # cv2.imwrite(f"./python_server/static/smokedet{i}.jpg", image_with_smoke)
-        # cv2.imwrite(f"./python_server/static/treedet{i}.jpg", image_with_trees)
+        cv2.imwrite(f"./python_server/static/firedet{i}.jpg", image_with_fire)
+        cv2.imwrite(f"./python_server/static/smokedet{i}.jpg", image_with_smoke)
+        cv2.imwrite(f"./python_server/static/treedet{i}.jpg", image_with_trees)
+        with open (f'./python_server/static/firedat{i}.txt', 'w') as file:
+            file.write(str(fire_boxes))
+        with open (f'./python_server/static/treedat{i}.txt', 'w') as file:
+            file.write(str(tree_boxes))
+        with open (f'./python_server/static/smokedat{i}.txt', 'w') as file:
+            file.write(str(somke_boxes))
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
     return hahaimages
